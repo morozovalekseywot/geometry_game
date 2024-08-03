@@ -1,10 +1,8 @@
 #include "Engine.h"
-#include <cstdlib>
 #include <memory.h>
 #include "draw.h"
 #include "cube.h"
-
-#include <cstdio>
+#include "circle.h"
 
 //
 //  You are free to modify this file
@@ -19,10 +17,15 @@
 
 // (0, 0) - сверху слева
 Cube cube;
+Circle circle;
 
 // initialize game data in this function
 void initialize() {
-    cube = Cube({{20.0, 20.0}, {40.0, 20.0}, {40.0, 40}, {20, 40}}, {20, 20}, 2 / M_PI);
+    cube = Cube({{20.0, 20.0},
+                 {40.0, 20.0},
+                 {40.0, 40},
+                 {20,   40}}, {20, 20}, 2 / M_PI);
+    circle = Circle({1000, SCREEN_HEIGHT / 2}, 500, {20, 0});
 }
 
 // this function is called to update game data,
@@ -33,6 +36,8 @@ void act(float dt) {
 
     cube.move(dt);
     cube.rotate(dt);
+    circle.move(dt);
+
 //    if (is_key_pressed(VK_RIGHT)) {
 //        line.move(1, dt);
 //    } else if (is_key_pressed(VK_LEFT)) {
@@ -47,10 +52,8 @@ void draw() {
     memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
 
     cube.draw(Color(0, 255, 0));
-//    int x = line.x, y = line.y;
-//    for (int i = 0; i < line.h; i++) {
-//        set_pixel(x, y + i, Color{255, 0, 0});
-//    }
+    circle.draw(Color(0, 0, 255));
+//    circle.draw_with_bezier(Color(0, 255, 0), 0, 2 * M_PI);
 }
 
 // free game data in this function

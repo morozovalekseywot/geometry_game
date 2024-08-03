@@ -1,12 +1,20 @@
 #pragma once
 
 #include <vector>
+#include <ostream>
 #include "vertex.h"
 
 using namespace std;
 
 struct Color {
     unsigned char r, g, b;
+
+    Color() = default;
+
+    friend ostream &operator<<(ostream &os, const Color &color) {
+        os << "r: " << color.r << " g: " << color.g << " b: " << color.b;
+        return os;
+    }
 
     Color(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b) {}
 };
@@ -21,7 +29,25 @@ void set_pixel(int x, int y, const Color &col) {
     buffer[y][x] = p;
 }
 
+Color get_pixel(int x, int y) {
+    uint32_t p = buffer[y][x];
+    Color color{};
+    color.b = p & 0xFF;
+    color.g = (p >> 8) & 0xFF;
+    color.r = (p >> 16) & 0xFF;
+
+    return color;
+}
+
 void set_pixel(const Vertex<int> &v, const Color &color) {
+    set_pixel(v.x, v.y, color);
+}
+
+void set_pixel(double x, double y, const Color &col) {
+    set_pixel(int(round(x)), int(round(y)), col);
+}
+
+void set_pixel(const Vertex<double> &v, const Color &color) {
     set_pixel(v.x, v.y, color);
 }
 
@@ -81,20 +107,16 @@ vector<int> get_comb_coeffs(int n) {
     return coeffs;
 }
 
-void draw_bezier_curve(const vector<Vertex<int>> &init_points, const Color &color) {
+void draw_bezier_curve(const vector<Vertex<double>> &init_points, const Color &color) {
     size_t n = init_points.size();
     auto coeffs = get_comb_coeffs(n);
-    vector<Vertex<double>> points(n);
-    for (size_t i = 0; i < n; ++i) {
-        points[i] = to_double_point(init_points[i]);
-    }
 
     // sum(coeffs[i] * (1 - t) ^ (n - i) * t ^ i * points[i])
-    Vertex<int> last = init_points[0];
+    Vertex<int> last = to_int_point(init_points[0]);
     for (double t = 0.0; t <= 1.0; t += 0.01) {
         Vertex<double> p = {0.0, 0.0};
         for (size_t i = 0; i < n; i++) {
-            p += points[i] * (coeffs[i] * pow((1 - t), n - i - 1) * pow(t, i));
+            p += init_points[i] * (coeffs[i] * pow((1 - t), n - i - 1) * pow(t, i));
         }
 
         Vertex<int> cur = to_int_point(p);
@@ -103,34 +125,15 @@ void draw_bezier_curve(const vector<Vertex<int>> &init_points, const Color &colo
             last = cur;
         }
     }
-    draw_line(last, init_points.back(), color);
+
+    draw_line(last, to_int_point(init_points.back()), color);
 }
 
-
-/// Функция, которая с помощью одной или нескольких кривых Безье 3-го
-/// порядка строит дугу окружности. Функция получает в качестве параметров координаты
-/// центра окружности, радиус окружности и значения двух углов, которые задают радиус-вектора от центра окружности до
-/// крайних точек дуги. Дуга строится против часовой стрелки.
-void draw_circle_with_bezier(const Vertex<int> &center, int r, double phi1, double phi2,
-                             const Color &color, const Color &color2) {
-    double step = M_PI / 4;
-    while (phi1 < phi2) {
-        double R = r / sin(M_PI / 2 - step / 2);
-        double F = 4.0 / 3 / (1 + 1 / cos(step / 4));
-        while (phi1 + step <= phi2 + 1e-2) {
-            Vertex<int> p1 = center + Vertex{round_to_int(r * cos(phi1)), round_to_int(r * sin(phi1))};
-            Vertex<int> p4 = center + Vertex{round_to_int(r * cos(phi1 + step)), round_to_int(r * sin(phi1 + step))};
-            Vertex<int> pt =
-                    center + Vertex{round_to_int(R * cos(phi1 + step / 2)), round_to_int(R * sin(phi1 + step / 2))};
-            Vertex<int> p2 = p1 + (pt - p1) * F;
-            Vertex<int> p3 = p4 + (pt - p4) * F;
-            draw_bezier_curve({p1, p2, p3, p4}, color);
-            phi1 += step;
-            set_pixel(p1.x, p1.y, color2);
-            set_pixel(p2.x, p2.y, color2);
-            set_pixel(p3.x, p3.y, color2);
-            set_pixel(p4.x, p4.y, color2);
-        }
-        step = phi2 - phi1;
+void draw_bezier_curve(const vector<Vertex<int>> &init_points, const Color &color) {
+    vector<Vertex<double>> points(init_points.size());
+    for (size_t i = 0; i < init_points.size(); ++i) {
+        points[i] = to_double_point(init_points[i]);
     }
+
+    draw_bezier_curve(points, color);
 }

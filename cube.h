@@ -8,7 +8,7 @@ public:
     array<Vertex<double>, 4> points;
     Vertex<double> center;
     Vertex<double> u;
-    double w;
+    double w = 0.0;
 
     Cube() = default;
 
