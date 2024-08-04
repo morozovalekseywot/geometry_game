@@ -1,21 +1,28 @@
 #pragma once
 
-#include "draw.h"
 #include <array>
+#include "draw.h"
 
-class Cube {
+enum CubeType
+{
+    Projectile,
+    Bonus,
+    Freeze
+};
+
+class Cube
+{
 public:
-    array<Vertex<double>, 4> points;
+    vector<Vertex<double>> points;
     Vertex<double> center;
     Vertex<double> u;
     double w = 0.0;
+    CubeType type;
 
     Cube() = default;
 
-    Cube(const vector<Vertex<double>> &vec, const Vertex<double> &u, double w = 0) : u(u), w(w) {
-        for (int i = 0; i < points.size(); i++)
-            points[i] = vec[i];
-
+    Cube(const vector<Vertex<double>> &vec, const Vertex<double> &u,
+         double w = 0, CubeType type = CubeType::Projectile) : points(vec), u(u), w(w), type(type) {
         center = Vertex<double>(0, 0, 0);
         for (auto &p: points)
             center += p;
@@ -23,11 +30,24 @@ public:
         center /= 4;
     }
 
-    void draw(const Color &color) const {
-        draw_line(points[0], points[1], color);
-        draw_line(points[1], points[2], color);
-        draw_line(points[2], points[3], color);
-        draw_line(points[3], points[0], color);
+    Cube(const Vertex<double> &center, double size, const Vertex<double> &u,
+         double w = 0, CubeType type = CubeType::Projectile) : center(center), u(u), w(w), type(type) {
+        points = {{center.x - size / 2, center.y - size / 2},
+                  {center.x - size / 2, center.y + size / 2},
+                  {center.x + size / 2, center.y + size / 2},
+                  {center.x + size / 2, center.y - size / 2}};
+    }
+
+    void draw(const Color &color, bool skip_miss = false) const {
+        int n = points.size();
+        for (int i = 0; i < n; i++) {
+            draw_line(points[i], points[circle_idx(i + 1, n)], color, skip_miss);
+        }
+    }
+
+    void fill(const Color &color, bool skip_miss = false) const {
+        draw(color, skip_miss);
+        fill_figure(to_int_point(center), color);
     }
 
     void move(double dt) {

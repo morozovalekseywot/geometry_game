@@ -2,7 +2,8 @@
 
 #include "draw.h"
 
-class Circle {
+class Circle
+{
 public:
     double r{};
     Vertex<double> center;
@@ -10,7 +11,11 @@ public:
 
     Circle() = default;
 
-    Circle(const Vertex<double> &center, double r, const Vertex<double> &u) : u(u), center(center), r(r) {}
+    Circle(const Vertex<double> &center, double r, const Vertex<double> &u = {0, 0}) : u(u), center(center), r(r) {}
+
+    void move(double dt) {
+        center += u * dt;
+    }
 
 private:
     void draw_part(const Vertex<double> &point, const Color &color) const {
@@ -44,7 +49,7 @@ public:
     /// порядка строит дугу окружности. Функция получает в качестве параметров координаты
     /// центра окружности, радиус окружности и значения двух углов, которые задают радиус-вектора от центра окружности до
     /// крайних точек дуги. Дуга строится против часовой стрелки.
-    void draw_with_bezier(const Color &color, double phi1 = 0, double phi2 = 2 * M_PI) {
+    void draw_with_bezier(const Color &color, double phi1 = 0, double phi2 = 2 * M_PI) const {
         double step = M_PI / 4;
         while (phi1 < phi2) {
             double R = r / sin(M_PI / 2 - step / 2);
@@ -57,18 +62,14 @@ public:
                 Vertex<double> p3 = p4 + (pt - p4) * F;
                 draw_bezier_curve({p1, p2, p3, p4}, color);
                 phi1 += step;
-//                set_pixel(p1.x, p1.y, color);
-//                set_pixel(p2.x, p2.y, color);
-//                set_pixel(p3.x, p3.y, color);
-//                set_pixel(p4.x, p4.y, color);
             }
             step = phi2 - phi1;
         }
     }
 
-
-    void move(double dt) {
-        center += u * dt;
+    void fill(const Color &color) const {
+        draw_with_bezier(color);
+        fill_figure(to_int_point(center), color);
     }
 
     ~Circle() = default;

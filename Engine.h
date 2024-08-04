@@ -6,8 +6,8 @@
 
 #include <cstdint>
 
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
+#define SCREEN_WIDTH 1200
+#define SCREEN_HEIGHT 1200
 
 // backbuffer
 extern uint32_t buffer[SCREEN_HEIGHT][SCREEN_WIDTH];

@@ -34,3 +34,5 @@
 # External files
 .idea
 bin/
+build
+.vscode

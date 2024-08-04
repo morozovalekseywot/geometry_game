@@ -10,7 +10,9 @@ class Vertex {
 public:
     T x = 0, y = 0, z = 0;
 
-    Vertex(T _x = 0, T _y = 0) : x(_x), y(_y), z(0) {}
+    Vertex() = default;
+
+    Vertex(T _x, T _y) : x(_x), y(_y), z(0) {}
 
     Vertex(T _x, T _y, T _z) : x(_x), y(_y), z(_z) {}
 

@@ -2,24 +2,27 @@
 
 #include <vector>
 #include <ostream>
+#include <stack>
 #include "vertex.h"
+#include "color.h"
+#include "mathematics.h"
+#include "settings.h"
 
 using namespace std;
 
-struct Color {
-    unsigned char r, g, b;
+bool is_point_in_image(int x, int y) {
+    return 0 <= x && x < SCREEN_WIDTH && 0 <= y && y < SCREEN_HEIGHT;
+}
 
-    Color() = default;
+bool is_point_in_image(const Vertex<int> &v) {
+    return 0 <= v.x && v.x < SCREEN_WIDTH && 0 <= v.y && v.y < SCREEN_HEIGHT;
+}
 
-    friend ostream &operator<<(ostream &os, const Color &color) {
-        os << "r: " << color.r << " g: " << color.g << " b: " << color.b;
-        return os;
+void set_pixel(int x, int y, const Color &col, bool skip_miss = false) {
+    if (skip_miss && !is_point_in_image(x, y)) {
+        return;
     }
 
-    Color(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b) {}
-};
-
-void set_pixel(int x, int y, const Color &col) {
     uint32_t p = col.r;
     p <<= 8;
     p |= col.g;
@@ -39,19 +42,23 @@ Color get_pixel(int x, int y) {
     return color;
 }
 
-void set_pixel(const Vertex<int> &v, const Color &color) {
-    set_pixel(v.x, v.y, color);
+void set_pixel(const Vertex<int> &v, const Color &color, bool skip_miss = false) {
+    set_pixel(v.x, v.y, color, skip_miss);
 }
 
-void set_pixel(double x, double y, const Color &col) {
-    set_pixel(int(round(x)), int(round(y)), col);
+Color get_pixel(const Vertex<int> &v) {
+    return get_pixel(v.x, v.y);
 }
 
-void set_pixel(const Vertex<double> &v, const Color &color) {
-    set_pixel(v.x, v.y, color);
+void set_pixel(double x, double y, const Color &col, bool skip_miss = false) {
+    set_pixel(int(round(x)), int(round(y)), col, skip_miss);
 }
 
-void draw_line(int x1, int y1, int x2, int y2, const Color &col) {
+void set_pixel(const Vertex<double> &v, const Color &color, bool skip_miss = false) {
+    set_pixel(v.x, v.y, color, skip_miss);
+}
+
+void draw_line(int x1, int y1, int x2, int y2, const Color &col, bool skip_miss = false) {
     if (x1 > x2) {
         swap(x1, x2);
         swap(y1, y2);
@@ -61,7 +68,7 @@ void draw_line(int x1, int y1, int x2, int y2, const Color &col) {
     const int step_x = x1 < x2 ? 1 : -1, step_y = y1 < y2 ? 1 : -1;
     int error = delta_x - delta_y;
     while (x1 != x2 && y1 != y2) {
-        set_pixel(x1, y1, col);
+        set_pixel(x1, y1, col, skip_miss);
         if (error > -delta_y) {
             error -= delta_y;
             x1 += step_x;
@@ -72,42 +79,27 @@ void draw_line(int x1, int y1, int x2, int y2, const Color &col) {
         }
     }
     while (x1 != x2) {
-        set_pixel(x1, y2, col);
+        set_pixel(x1, y2, col, skip_miss);
         x1 += step_x;
     }
     while (y1 != y2) {
-        set_pixel(x2, y1, col);
+        set_pixel(x2, y1, col, skip_miss);
         y1 += step_y;
     }
-    set_pixel(x2, y2, col);
+    set_pixel(x2, y2, col, skip_miss);
 }
 
-void draw_line(const Vertex<int> &from, const Vertex<int> &to, const Color &color) {
-    draw_line(from.x, from.y, to.x, to.y, color);
+void draw_line(const Vertex<int> &from, const Vertex<int> &to, const Color &color, bool skip_miss = false) {
+    draw_line(from.x, from.y, to.x, to.y, color, skip_miss);
 }
 
-void draw_line(const Vertex<double> &from, const Vertex<double> &to, const Color &color) {
-    draw_line(round_to_int(from.x), round_to_int(from.y), round_to_int(to.x), round_to_int(to.y), color);
+void draw_line(const Vertex<double> &from, const Vertex<double> &to, const Color &color, bool skip_miss = false) {
+    draw_line(round_to_int(from.x), round_to_int(from.y),
+              round_to_int(to.x), round_to_int(to.y),
+              color, skip_miss);
 }
 
-vector<int> get_comb_coeffs(int n) {
-    if (n == 1)
-        return {1};
-    vector<int> coeffs(n);
-    coeffs[0] = 1;
-    coeffs.back() = 1;
-    for (int i = 1; i < n / 2; i++) {
-        coeffs[i] = coeffs[i - 1] * (n - i) / i;
-        coeffs[n - i - 1] = coeffs[i];
-    }
-    if (n % 2 != 0) {
-        coeffs[n / 2] = coeffs[n / 2 - 1] * (n - n / 2) / (n / 2);
-    }
-
-    return coeffs;
-}
-
-void draw_bezier_curve(const vector<Vertex<double>> &init_points, const Color &color) {
+void draw_bezier_curve(const vector<Vertex<double>> &init_points, const Color &color, bool skip_miss = false) {
     size_t n = init_points.size();
     auto coeffs = get_comb_coeffs(n);
 
@@ -121,19 +113,71 @@ void draw_bezier_curve(const vector<Vertex<double>> &init_points, const Color &c
 
         Vertex<int> cur = to_int_point(p);
         if ((cur - last).mod2() > 3) {
-            draw_line(last.x, last.y, cur.x, cur.y, color);
+            draw_line(last, cur, color, skip_miss);
             last = cur;
         }
     }
 
-    draw_line(last, to_int_point(init_points.back()), color);
+    draw_line(last, to_int_point(init_points.back()), color, skip_miss);
 }
 
-void draw_bezier_curve(const vector<Vertex<int>> &init_points, const Color &color) {
+void draw_bezier_curve(const vector<Vertex<int>> &init_points, const Color &color, bool skip_miss = false) {
     vector<Vertex<double>> points(init_points.size());
     for (size_t i = 0; i < init_points.size(); ++i) {
         points[i] = to_double_point(init_points[i]);
     }
 
-    draw_bezier_curve(points, color);
+    draw_bezier_curve(points, color, skip_miss);
+}
+
+void fill_figure(const Vertex<int> &seed, const Color &newColor, const Color &stopColor = bounds_color) {
+    static const int dx[4] = {0, 1, 0, -1}; // смещения для получения координат 4-х соседей
+    static const int dy[4] = {-1, 0, 1, 0};
+    std::stack<Vertex<int>> stack;
+
+    if(is_point_in_image(seed)){
+        stack.push(seed);
+    } else {
+        for(int i = 0; i < 4; i++){
+            Vertex<int> next(seed.x + dx[i], seed.y + dy[i]);
+            if (is_point_in_image(next)) {
+                Color currentColor = get_pixel(next);
+                if (!(currentColor == stopColor) && !(currentColor == newColor)) {
+                    stack.push(next);
+                    break;
+                }
+            }
+        }
+    }
+
+    while (!stack.empty()) {
+        Vertex<int> v = stack.top();
+        stack.pop();
+        set_pixel(v, newColor, true);
+        for (int i = 0; i < 4; i++) {
+            Vertex<int> next(v.x + dx[i], v.y + dy[i]);
+            if (is_point_in_image(next)) {
+                Color currentColor = get_pixel(next);
+                if (!(currentColor == stopColor) && !(currentColor == newColor)) {
+                    stack.push(next);
+                }
+            }
+        }
+    }
+}
+
+void draw_bounds() {
+    for (int y = 0; y < bounds_size; y++) {
+        for (int x = 0; x < SCREEN_WIDTH; x++) {
+            set_pixel(x, y, bounds_color);
+            set_pixel(x, SCREEN_HEIGHT - y - 1, bounds_color);
+        }
+    }
+
+    for (int x = 0; x < bounds_size; x++) {
+        for (int y = bounds_size; y < SCREEN_HEIGHT - bounds_size; y++) {
+            set_pixel(x, y, bounds_color);
+            set_pixel(SCREEN_WIDTH - x - 1, y, bounds_color);
+        }
+    }
 }

@@ -3,6 +3,10 @@
 #include "draw.h"
 #include "cube.h"
 #include "circle.h"
+#include "mathematics.h"
+#include "rotator.h"
+#include "cube_launcher.h"
+#include "game_logic.h"
 
 //
 //  You are free to modify this file
@@ -16,16 +20,23 @@
 //  schedule_quit_game() - quit game after act()
 
 // (0, 0) - сверху слева
-Cube cube;
-Circle circle;
+
+int score = 0;
+GameLogic game_logic;
 
 // initialize game data in this function
 void initialize() {
-    cube = Cube({{20.0, 20.0},
-                 {40.0, 20.0},
-                 {40.0, 40},
-                 {20,   40}}, {20, 20}, 2 / M_PI);
-    circle = Circle({1000, SCREEN_HEIGHT / 2}, 500, {20, 0});
+    double R = 300, r = 40, w = 2 * M_PI / 5;
+    int count = 2;
+    Rotator rotator({SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0}, R, r, w, count);
+
+    double bonus_part = 0.3, freeze_part = 0.4, T = 3;
+    double speed_min = 100, speed_max = 150;
+    double w_min = 2 * M_PI / 5, w_max = 2 * M_PI / 2;
+    int size_min = 20, size_max = 40;
+    CubeLauncher cube_launcher(bonus_part, freeze_part, T, speed_min, speed_max, w_min, w_max, size_min, size_max);
+
+    game_logic = GameLogic(rotator, cube_launcher);
 }
 
 // this function is called to update game data,
@@ -34,15 +45,19 @@ void act(float dt) {
     if (is_key_pressed(VK_ESCAPE))
         schedule_quit_game();
 
-    cube.move(dt);
-    cube.rotate(dt);
-    circle.move(dt);
+    if (is_key_pressed(VK_SPACE))
+        game_logic.change_direction();
 
-//    if (is_key_pressed(VK_RIGHT)) {
-//        line.move(1, dt);
-//    } else if (is_key_pressed(VK_LEFT)) {
-//        line.move(-1, dt);
-//    }
+    game_logic.actions(dt);
+    if (!game_logic.update_score()) {
+        cout << "\nYOU LOOSE!!!\n";
+        schedule_quit_game();
+    }
+
+    if (game_logic.get_score() != score) {
+        score = game_logic.get_score();
+        cout << "Your score is: " << score << '\n';
+    }
 }
 
 // fill buffer in this function
@@ -50,10 +65,10 @@ void act(float dt) {
 void draw() {
     // clear backbuffer
     memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
+    draw_bounds();
 
-    cube.draw(Color(0, 255, 0));
-    circle.draw(Color(0, 0, 255));
-//    circle.draw_with_bezier(Color(0, 255, 0), 0, 2 * M_PI);
+    game_logic.draw();
+    draw_bounds();
 }
 
 // free game data in this function
