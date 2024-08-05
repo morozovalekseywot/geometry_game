@@ -23,7 +23,7 @@ bool is_end = false;
 // initialize game data in this function
 void initialize() {
     double R = 280, r = 40, w = 0.5 * M_PI;
-    int count = 2;
+    int count = 2; // количество кругов
     Rotator rotator({SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0}, R, r, w, count);
     circle = Circle({SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0}, R);
 

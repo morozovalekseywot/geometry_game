@@ -3,7 +3,7 @@
 #include "circle.h"
 #include "mathematics.h"
 
-/// Вращатель кругов
+/// Класс, для вращения кругов
 class Rotator {
     Vertex<double> center; ///< Центр вращения
     double R; ///< Большой радиус
@@ -16,6 +16,10 @@ public:
 
     Rotator() = default;
 
+    /// @param center Точка вращения
+    /// @param R Радиус вращения
+    /// @param r Радиус кругов
+    /// @param count Количество кругов
     Rotator(const Vertex<double> &center, double R, double r, double w, size_t count) : center(center),
                                                                                         R(R), r(r), w(w) {
         if (count < 1) {
