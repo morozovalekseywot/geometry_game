@@ -1,7 +1,6 @@
-# Game Template (Linux)
+# Circle Rush Game
 
-A simple framework for prototyping games. \
-The framework provides a video buffer and simple keyboard and mouse input.
+![alt text](game.png "Game")
 
 ### Build
 ``sudo apt install g++ cmake libx11-dev`` \

@@ -8,11 +8,14 @@
 
 using namespace std;
 
+/// @brief Цвет пикселя
 struct Color
 {
     unsigned char r, g, b;
 
     Color() = default;
+
+    Color(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b) {}
 
     friend ostream &operator<<(ostream &os, const Color &color) {
         os << "r: " << color.r << " g: " << color.g << " b: " << color.b;
@@ -28,8 +31,6 @@ struct Color
     bool operator!=(const Color &rhs) const {
         return !(rhs == *this);
     }
-
-    Color(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b) {}
 
     ~Color() = default;
 };

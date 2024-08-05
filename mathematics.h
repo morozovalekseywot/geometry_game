@@ -5,7 +5,7 @@
 
 template<class T>
 inline T circle_idx(T i, T n) {
-    if(i < n)
+    if (i < n)
         return i;
 
     return i - n;
@@ -29,4 +29,15 @@ vector<int> get_comb_coeffs(int n) {
     }
 
     return coeffs;
+}
+
+template<class T>
+int sign(T n) {
+    if (n > 0)
+        return 1;
+    else if (n < 0) {
+        return -1;
+    }
+
+    return 0;
 }

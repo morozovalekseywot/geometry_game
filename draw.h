@@ -6,7 +6,7 @@
 #include "vertex.h"
 #include "color.h"
 #include "mathematics.h"
-#include "settings.h"
+#include "color_settings.h"
 
 using namespace std;
 
@@ -58,6 +58,7 @@ void set_pixel(const Vertex<double> &v, const Color &color, bool skip_miss = fal
     set_pixel(v.x, v.y, color, skip_miss);
 }
 
+/// @brief Отрисовка отрезка алгоритмом Брезенхема
 void draw_line(int x1, int y1, int x2, int y2, const Color &col, bool skip_miss = false) {
     if (x1 > x2) {
         swap(x1, x2);
@@ -99,6 +100,7 @@ void draw_line(const Vertex<double> &from, const Vertex<double> &to, const Color
               color, skip_miss);
 }
 
+/// @brief Отрисовка кривой Безье
 void draw_bezier_curve(const vector<Vertex<double>> &init_points, const Color &color, bool skip_miss = false) {
     size_t n = init_points.size();
     auto coeffs = get_comb_coeffs(n);
@@ -130,7 +132,11 @@ void draw_bezier_curve(const vector<Vertex<int>> &init_points, const Color &colo
     draw_bezier_curve(points, color, skip_miss);
 }
 
-void fill_figure(const Vertex<int> &seed, const Color &newColor, const Color &stopColor = bounds_color) {
+/// @brief Заливка фигуры
+/// @param seed - начальная точка
+/// @param new_color - цвет закраски
+/// @param stop_color - цвет, за который нельзя выходить
+void fill_figure(const Vertex<int> &seed, const Color &new_color, const Color &stop_color = bounds_color) {
     static const int dx[4] = {0, 1, 0, -1}; // смещения для получения координат 4-х соседей
     static const int dy[4] = {-1, 0, 1, 0};
     std::stack<Vertex<int>> stack;
@@ -142,7 +148,7 @@ void fill_figure(const Vertex<int> &seed, const Color &newColor, const Color &st
             Vertex<int> next(seed.x + dx[i], seed.y + dy[i]);
             if (is_point_in_image(next)) {
                 Color currentColor = get_pixel(next);
-                if (!(currentColor == stopColor) && !(currentColor == newColor)) {
+                if (!(currentColor == stop_color) && !(currentColor == new_color)) {
                     stack.push(next);
                     break;
                 }
@@ -153,12 +159,12 @@ void fill_figure(const Vertex<int> &seed, const Color &newColor, const Color &st
     while (!stack.empty()) {
         Vertex<int> v = stack.top();
         stack.pop();
-        set_pixel(v, newColor, true);
+        set_pixel(v, new_color, true);
         for (int i = 0; i < 4; i++) {
             Vertex<int> next(v.x + dx[i], v.y + dy[i]);
             if (is_point_in_image(next)) {
                 Color currentColor = get_pixel(next);
-                if (!(currentColor == stopColor) && !(currentColor == newColor)) {
+                if (!(currentColor == stop_color) && !(currentColor == new_color)) {
                     stack.push(next);
                 }
             }

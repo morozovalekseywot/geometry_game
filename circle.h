@@ -2,22 +2,24 @@
 
 #include "draw.h"
 
-class Circle
-{
+/// @brief Круг
+class Circle {
 public:
-    double r{};
-    Vertex<double> center;
-    Vertex<double> u;
+    double r{}; ///< Радиус круга
+    Vertex<double> center; ///< Центр круга
+    Vertex<double> u; ///< Скорость круга
 
     Circle() = default;
 
     Circle(const Vertex<double> &center, double r, const Vertex<double> &u = {0, 0}) : u(u), center(center), r(r) {}
 
+    /// @brief Движение куба
     void move(double dt) {
         center += u * dt;
     }
 
 private:
+
     void draw_part(const Vertex<double> &point, const Color &color) const {
         set_pixel(center.x + point.x, center.y + point.y, color);
         set_pixel(center.x - point.x, center.y + point.y, color);
@@ -30,6 +32,8 @@ private:
     }
 
 public:
+
+    /// @brief Отрисовка границ круга
     void draw(const Color &color) const {
         int x = 0, y = r;
         int d = 3 - 2 * r;
@@ -45,9 +49,9 @@ public:
         }
     }
 
-    /// Функция, которая с помощью одной или нескольких кривых Безье 3-го
-    /// порядка строит дугу окружности. Функция получает в качестве параметров координаты
-    /// центра окружности, радиус окружности и значения двух углов, которые задают радиус-вектора от центра окружности до
+    /// @brief Функция, которая с помощью одной или нескольких кривых Безье 3-го порядка строит дугу окружности.
+    /// @param color цвет отрисовки
+    /// @param phi1, phi2 значение двух углов, которые задают радиус-вектора от центра окружности до
     /// крайних точек дуги. Дуга строится против часовой стрелки.
     void draw_with_bezier(const Color &color, double phi1 = 0, double phi2 = 2 * M_PI) const {
         double step = M_PI / 4;
@@ -67,9 +71,19 @@ public:
         }
     }
 
+    /// @brief Заливка круга
     void fill(const Color &color) const {
         draw_with_bezier(color);
         fill_figure(to_int_point(center), color);
+    }
+
+    /// @brief Отрисовка границы круга прерывистой линией
+    void draw_segment_line(const Color &color, int count) const {
+        double delta = 2 * M_PI / count;
+        for (int i = 0; i < count; i++) {
+            double phi = delta * i;
+            draw_with_bezier(color, phi, phi + delta / 2);
+        }
     }
 
     ~Circle() = default;

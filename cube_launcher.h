@@ -1,18 +1,17 @@
 #pragma once
 
 #include "cube.h"
-#include "settings.h"
+#include "color_settings.h"
 #include <list>
 #include <random>
 
-class CubeLauncher
-{
+///@brief Класс, предназначенный для запуска и контроля кубов
+class CubeLauncher {
+    int cube_limit = 4; ///< Количество кубиков одновременно на экране
     double bonus_part{}; ///< Доля бонусных кубов
     double freeze_part{}; ///< Доля замораживающих кубов
-    double speed_min{}, speed_max{}; ///< Границы скоростей
-    int size_min{}, size_max{}; ///< Границы размеров
     double time = 0.0;
-    double T{}; ///< Период
+    double T{}; ///< Период запуска
 
     std::uniform_real_distribution<double> type_generator;
     std::uniform_real_distribution<double> speed_generator;
@@ -23,19 +22,30 @@ class CubeLauncher
     std::uniform_int_distribution<int> size_generator;
     std::uniform_int_distribution<int> wall_generator;
     std::default_random_engine re;
+    std::default_random_engine re_cube_type;
 
 public:
     list <Cube> cubes; ///< Текущие кубы
 
     CubeLauncher() = default;
 
-    CubeLauncher(double bonus_part, double freeze_part, double T,
+    /// @param cube_limit Количество кубиков одновременно на экране
+    /// @param bonus_part Доля бонусных кубов
+    /// @param freeze_part Доля замораживающих кубов
+    /// @param speed_min нижняя граница скорости кубов
+    /// @param speed_max верхняя граница скорости кубов
+    /// @param w_min нижняя граница угловой скорости кубов
+    /// @param w_max верхняя граница угловой скорости кубов
+    /// @param size_min нижняя граница размера кубов
+    /// @param size_max верхняя границы размера кубов
+    CubeLauncher(int cube_limit, double bonus_part, double freeze_part, double T,
                  double speed_min, double speed_max, double w_min, double w_max,
-                 int size_min, int size_max) : bonus_part(bonus_part), freeze_part(freeze_part), T(T),
-                                               speed_min(speed_min), speed_max(speed_max),
-                                               size_min(size_min), size_max(size_max) {
+                 int size_min, int size_max) : cube_limit(cube_limit), T(T),
+                                               bonus_part(bonus_part), freeze_part(freeze_part) {
         if (bonus_part < 0 || bonus_part > 1)
             throw runtime_error("Part of bonus cubes must be between 0 and 1");
+        if (freeze_part < 0 || freeze_part > 1)
+            throw runtime_error("Part of freeze cubes must be between 0 and 1");
         if (T <= 0)
             throw runtime_error("Period of cube generation must be greater then zero");
         if (speed_min <= 0)
@@ -53,6 +63,7 @@ public:
 
         std::random_device rd;
         re = default_random_engine(rd());
+        re_cube_type = default_random_engine(rd());
 
         type_generator = std::uniform_real_distribution<double>(0, 1);
         speed_generator = std::uniform_real_distribution<double>(speed_min, speed_max);
@@ -64,12 +75,26 @@ public:
         wall_generator = std::uniform_int_distribution<int>(0, 3);
     }
 
+private:
+
+    /// @brief Проверка наличия куба на изображении
+    bool check_cube_in_image(const vector<Vertex<double>> &points) {
+        for (auto &p: points)
+            if (!is_point_in_image(to_int_point(p)))
+                return false;
+
+        return true;
+    }
+
+public:
+
+    /// @brief Двигает все кубы и удаляет вылетевшие за границу
     void move(double dt) {
         auto it = cubes.begin();
         while (it != cubes.end()) {
             it->move(dt);
             it->rotate(dt);
-            while (!is_point_in_image(to_int_point(it->center))) {
+            while (it != cubes.end() && !check_cube_in_image(it->points)) {
                 auto cur = it;
                 ++it;
                 cubes.erase(cur);
@@ -78,6 +103,7 @@ public:
         }
     }
 
+    /// @brief Отрисовка кубов
     void draw() {
         for (auto &cube: cubes) {
             switch (cube.type) {
@@ -94,6 +120,17 @@ public:
         }
     }
 
+    /// @brief Ускорить кубы в alpha раз
+    void up_speed(double alpha) {
+        speed_generator = std::uniform_real_distribution<double>(alpha * speed_generator.min(), alpha * speed_generator.max());
+    }
+
+    /// @brief Увеличить время появления кубов в alpha раз
+    void up_T(double alpha) {
+        T *= alpha;
+    }
+
+    /// @brief Генерация куба
     void generate(double dt) {
         time -= dt;
         if (time > 0 || cubes.size() >= cube_limit)
@@ -104,18 +141,19 @@ public:
         double place = place_generator(re);
         double size = size_generator(re);
         Vertex<double> from;
+        double shift = sqrt(2) * size;
         switch (wall) {
             case 0: // верхняя
-                from = {place * SCREEN_WIDTH, size};
+                from = {place * SCREEN_WIDTH, shift};
                 break;
             case 1: // правая
-                from = {SCREEN_WIDTH - size, place * SCREEN_HEIGHT};
+                from = {SCREEN_WIDTH - shift, place * SCREEN_HEIGHT};
                 break;
             case 2: // нижняя
-                from = {place * SCREEN_WIDTH, SCREEN_HEIGHT - size};
+                from = {place * SCREEN_WIDTH, SCREEN_HEIGHT - shift};
                 break;
             case 3: // левая
-                from = {size, place * SCREEN_HEIGHT};
+                from = {shift, place * SCREEN_HEIGHT};
                 break;
         }
 
@@ -125,7 +163,7 @@ public:
         velocity = velocity * (speed / velocity.mod());
         double w = angular_speed_generator(re);
 
-        double type_val = type_generator(re);
+        double type_val = type_generator(re_cube_type);
         CubeType type = CubeType::Projectile;
         if (type_val < bonus_part) {
             type = CubeType::Bonus;

@@ -3,8 +3,8 @@
 #include "circle.h"
 #include "mathematics.h"
 
-class Rotator
-{
+/// Вращатель кругов
+class Rotator {
     Vertex<double> center; ///< Центр вращения
     double R; ///< Большой радиус
     double r; ///< Радиус круга
@@ -34,10 +34,12 @@ public:
         }
     }
 
+    /// @brief Изменить направление движения кругов
     void change_direction() {
         forward = !forward;
     }
 
+    /// @brief Вращать круги
     void rotate(double dt) {
         double phi = w * dt;
         if (!forward) {
@@ -53,6 +55,7 @@ public:
         }
     }
 
+    /// @brief Отрисовка кругов
     void draw(const Color &color) const {
         for (auto &circle: circles)
             circle.fill(color);
@@ -60,6 +63,11 @@ public:
 
     const vector<Circle> &get_circles() const {
         return circles;
+    }
+
+    /// @brief Ускорение вращения в alpha раз
+    void up_w(double alpha) {
+        w *= alpha;
     }
 
     ~Rotator() = default;
