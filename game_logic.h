@@ -14,7 +14,7 @@ class GameLogic {
     double time = 0;
     bool is_freeze = false;
 
-    bool dynamic_difficult = false; ///< Усложнять ли игру динамически
+    bool dynamic_difficult; ///< Усложнять ли игру динамически
     int last_up_score = 5; ///< Результат, по достижении которого игра усложнится
     double up_speed = 1.2; ///< Коэффициент прироста скорости кубов
     double up_w = 1.1; ///< Коэффициент прироста скорости вращения кругов

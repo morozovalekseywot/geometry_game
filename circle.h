@@ -13,7 +13,7 @@ public:
 
     Circle(const Vertex<double> &center, double r, const Vertex<double> &u = {0, 0}) : u(u), center(center), r(r) {}
 
-    /// @brief Движение куба
+    /// @brief Движение круга
     void move(double dt) {
         center += u * dt;
     }

@@ -19,6 +19,7 @@ GameLogic game_logic;
 Scoreboard scoreboard;
 Circle circle;
 bool is_end = false;
+double wait_restart = 0;
 
 // initialize game data in this function
 void initialize() {
@@ -34,7 +35,8 @@ void initialize() {
     int size_min = 20, size_max = 40;
     CubeLauncher cube_launcher(cube_limit, bonus_part, freeze_part, T, speed_min, speed_max, w_min, w_max, size_min, size_max);
 
-    game_logic = GameLogic(rotator, cube_launcher, true);
+    bool dynamic_difficult = true;
+    game_logic = GameLogic(rotator, cube_launcher, dynamic_difficult);
 }
 
 // this function is called to update game data,
@@ -43,7 +45,15 @@ void act(float dt) {
     if (is_key_pressed(VK_ESCAPE))
         schedule_quit_game();
 
-    if(is_end)
+    wait_restart -= dt;
+    if (wait_restart < 0 && is_key_pressed(VK_RETURN)) {
+        is_end = false;
+        cout << "RESTART GAME\n";
+        wait_restart = 0.5;
+        initialize();
+    }
+
+    if (is_end)
         return;
 
     if (is_key_pressed(VK_SPACE))
@@ -52,6 +62,7 @@ void act(float dt) {
     game_logic.actions(dt);
     if (!game_logic.update_score()) {
         cout << "\nYOU LOOSE!!!\n";
+        cout << "PRESS ENTER TO RESTART\n";
         is_end = true;
     }
 
@@ -67,8 +78,8 @@ void draw() {
     // clear backbuffer
     memset(buffer, 0, SCREEN_HEIGHT * SCREEN_WIDTH * sizeof(uint32_t));
 
-    for(int y = 0; y < SCREEN_HEIGHT; y++){
-        for(int x = 0; x < SCREEN_WIDTH; x++){
+    for (int y = 0; y < SCREEN_HEIGHT; y++) {
+        for (int x = 0; x < SCREEN_WIDTH; x++) {
             set_pixel(x, y, background_color);
         }
     }
